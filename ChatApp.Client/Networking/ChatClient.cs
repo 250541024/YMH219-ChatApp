@@ -142,6 +142,18 @@ namespace ChatApp.Client.Networking
             return SendAsync(text, t => ChatMessage.CreateChat(Username, t));
         }
 
+        /// <summary>Yalnızca belirtilen kullanıcıya özel mesaj gönderir.</summary>
+        public Task SendPrivateAsync(string recipient, string text)
+        {
+            if (string.IsNullOrWhiteSpace(recipient))
+                throw new ArgumentException("Özel mesaj için bir alıcı seçin.");
+            if (string.Equals(recipient.Trim(), Username, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Kendinize özel mesaj gönderemezsiniz.");
+
+            string to = recipient.Trim();
+            return SendAsync(text, t => ChatMessage.CreatePrivate(Username, to, t));
+        }
+
         private async Task SendAsync(string text, Func<string, ChatMessage> createMessage)
         {
             MessageConnection current = connection;

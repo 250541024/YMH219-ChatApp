@@ -275,10 +275,48 @@ namespace ChatApp.Server.Networking
                     break;
                 }
 
+                case MessageType.Private:
+                    await ProcessPrivateMessageAsync(session, message, token).ConfigureAwait(false);
+                    break;
+
                 default:
                     WriteLog(LogKind.Warning, session.Username + " beklenmeyen bir mesaj türü gönderdi: " + message.Type);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Özel mesajı yalnızca alıcıya iletir; gönderene de bir kopyası gider (kendi ekranında görsün).
+        /// Gizlilik için mesajın içeriği sunucu kaydına yazılmaz.
+        /// </summary>
+        private async Task ProcessPrivateMessageAsync(ClientSession sender, ChatMessage message, CancellationToken token)
+        {
+            string error = ChatRules.ValidateMessage(message.Text);
+            string target = message.To?.Trim();
+
+            if (error == null && string.IsNullOrEmpty(target))
+                error = "Özel mesaj için alıcı belirtilmedi.";
+            else if (error == null && string.Equals(target, sender.Username, StringComparison.OrdinalIgnoreCase))
+                error = "Kendinize özel mesaj gönderemezsiniz.";
+
+            ClientSession receiver = null;
+            if (error == null && !clients.TryGetValue(target, out receiver))
+                error = "\"" + target + "\" çevrimiçi değil.";
+
+            if (error != null)
+            {
+                await SendSafeAsync(sender, ChatMessage.CreateSystem("Özel mesaj iletilemedi: " + error), token).ConfigureAwait(false);
+                return;
+            }
+
+            ChatMessage stamped = ChatMessage.CreatePrivate(sender.Username, receiver.Username, message.Text.Trim());
+            sender.IncrementMessageCount();
+            WriteLog(LogKind.Private, sender.Username + " → " + receiver.Username + " özel mesaj gönderdi (içerik gizli).");
+            ClientUpdated?.Invoke(this, new ClientEventArgs(sender.ToInfo()));
+
+            await Task.WhenAll(
+                SendSafeAsync(receiver, stamped, token),
+                SendSafeAsync(sender, stamped, token)).ConfigureAwait(false);
         }
 
         private async Task RemoveClientAsync(ClientSession session, string reason, CancellationToken token)

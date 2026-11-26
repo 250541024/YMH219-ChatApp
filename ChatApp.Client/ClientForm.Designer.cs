@@ -32,6 +32,9 @@ namespace ChatApp.Client
             rtbChat = new System.Windows.Forms.RichTextBox();
             grpUsers = new System.Windows.Forms.GroupBox();
             lstUsers = new System.Windows.Forms.ListBox();
+            lblRecipient = new System.Windows.Forms.Label();
+            cmbRecipient = new System.Windows.Forms.ComboBox();
+            btnSaveHistory = new System.Windows.Forms.Button();
             txtMessage = new System.Windows.Forms.TextBox();
             btnSend = new System.Windows.Forms.Button();
             lblCharCount = new System.Windows.Forms.Label();
@@ -210,17 +213,51 @@ namespace ChatApp.Client
             lstUsers.Name = "lstUsers";
             lstUsers.Size = new System.Drawing.Size(196, 394);
             lstUsers.TabIndex = 0;
+            lstUsers.DoubleClick += LstUsers_DoubleClick;
+            //
+            // lblRecipient
+            //
+            lblRecipient.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            lblRecipient.AutoSize = true;
+            lblRecipient.Location = new System.Drawing.Point(12, 557);
+            lblRecipient.Name = "lblRecipient";
+            lblRecipient.Size = new System.Drawing.Size(36, 15);
+            lblRecipient.TabIndex = 16;
+            lblRecipient.Text = "Alıcı:";
+            //
+            // cmbRecipient
+            //
+            cmbRecipient.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            cmbRecipient.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cmbRecipient.Enabled = false;
+            cmbRecipient.Font = new System.Drawing.Font("Segoe UI", 10F);
+            cmbRecipient.Location = new System.Drawing.Point(52, 552);
+            cmbRecipient.Name = "cmbRecipient";
+            cmbRecipient.Size = new System.Drawing.Size(150, 25);
+            cmbRecipient.TabIndex = 17;
+            cmbRecipient.SelectedIndexChanged += CmbRecipient_SelectedIndexChanged;
+            //
+            // btnSaveHistory
+            //
+            btnSaveHistory.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            btnSaveHistory.Location = new System.Drawing.Point(652, 586);
+            btnSaveHistory.Name = "btnSaveHistory";
+            btnSaveHistory.Size = new System.Drawing.Size(122, 28);
+            btnSaveHistory.TabIndex = 18;
+            btnSaveHistory.Text = "Geçmişi Kaydet…";
+            btnSaveHistory.UseVisualStyleBackColor = true;
+            btnSaveHistory.Click += BtnSaveHistory_Click;
             //
             // txtMessage
             //
             txtMessage.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             txtMessage.Enabled = false;
             txtMessage.Font = new System.Drawing.Font("Segoe UI", 10F);
-            txtMessage.Location = new System.Drawing.Point(12, 552);
+            txtMessage.Location = new System.Drawing.Point(210, 552);
             txtMessage.MaxLength = 500;
             txtMessage.Name = "txtMessage";
             txtMessage.PlaceholderText = "Mesajınızı yazın ve Enter'a basın";
-            txtMessage.Size = new System.Drawing.Size(760, 25);
+            txtMessage.Size = new System.Drawing.Size(562, 25);
             txtMessage.TabIndex = 11;
             txtMessage.TextChanged += TxtMessage_TextChanged;
             txtMessage.KeyDown += TxtMessage_KeyDown;
@@ -280,6 +317,9 @@ namespace ChatApp.Client
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             BackColor = System.Drawing.Color.FromArgb(241, 245, 249);
             ClientSize = new System.Drawing.Size(900, 640);
+            Controls.Add(btnSaveHistory);
+            Controls.Add(cmbRecipient);
+            Controls.Add(lblRecipient);
             Controls.Add(btnClearChat);
             Controls.Add(lblCharCount);
             Controls.Add(btnSend);
@@ -329,6 +369,9 @@ namespace ChatApp.Client
         private System.Windows.Forms.RichTextBox rtbChat;
         private System.Windows.Forms.GroupBox grpUsers;
         private System.Windows.Forms.ListBox lstUsers;
+        private System.Windows.Forms.Label lblRecipient;
+        private System.Windows.Forms.ComboBox cmbRecipient;
+        private System.Windows.Forms.Button btnSaveHistory;
         private System.Windows.Forms.TextBox txtMessage;
         private System.Windows.Forms.Button btnSend;
         private System.Windows.Forms.Label lblCharCount;

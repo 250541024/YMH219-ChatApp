@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using ChatApp.Client.Networking;
+using ChatApp.Client.Services;
 using ChatApp.Shared;
 using ChatApp.Shared.Protocol;
 
@@ -25,6 +28,10 @@ namespace ChatApp.Client
         private static readonly Color TextColor = Color.FromArgb(15, 23, 42);
         private static readonly Color SystemColor = Color.FromArgb(100, 116, 139);
         private static readonly Color ErrorColor = Color.FromArgb(220, 38, 38);
+        private static readonly Color PrivateColor = Color.FromArgb(126, 34, 206);
+
+        /// <summary>"Alıcı" listesindeki herkese açık mesaj seçeneği.</summary>
+        private const string Everyone = "Herkes";
 
         // Diğer kullanıcıların adları için renk paleti (her ad hep aynı rengi alır)
         private static readonly Color[] NamePalette =
@@ -34,6 +41,8 @@ namespace ChatApp.Client
         };
 
         private readonly ChatClient client = new ChatClient();
+        private readonly ChatHistory history = new ChatHistory();
+        private IReadOnlyList<string> currentUsers = Array.Empty<string>();
         private Font boldFont;
         private Font italicFont;
         private bool closeAfterDisconnect;
@@ -41,6 +50,9 @@ namespace ChatApp.Client
         public ClientForm()
         {
             InitializeComponent();
+
+            cmbRecipient.Items.Add(Everyone);
+            cmbRecipient.SelectedIndex = 0;
 
             boldFont = new Font(rtbChat.Font, FontStyle.Bold);
             italicFont = new Font(rtbChat.Font, FontStyle.Italic);
@@ -133,9 +145,13 @@ namespace ChatApp.Client
             string text = txtMessage.Text;
             if (string.IsNullOrWhiteSpace(text)) return;
 
+            string recipient = cmbRecipient.SelectedItem as string;
             try
             {
-                await client.SendChatAsync(text);
+                if (recipient == null || recipient == Everyone)
+                    await client.SendChatAsync(text);
+                else
+                    await client.SendPrivateAsync(recipient, text);
                 txtMessage.Clear();
             }
             catch (ArgumentException ex)
@@ -156,6 +172,98 @@ namespace ChatApp.Client
         private void BtnClearChat_Click(object sender, EventArgs e)
         {
             rtbChat.Clear();
+            history.Clear(); // Kaydedilen geçmiş, ekranda görünenle aynı kalsın
+        }
+
+        // ---------------------------------------------------------------
+        //  Özel mesaj alıcısı
+        // ---------------------------------------------------------------
+
+        /// <summary>Kullanıcı listesinde bir ada çift tıklanınca o kişi özel mesaj alıcısı olur.</summary>
+        private void LstUsers_DoubleClick(object sender, EventArgs e)
+        {
+            int index = lstUsers.SelectedIndex;
+            if (index < 0 || index >= currentUsers.Count) return;
+
+            string user = currentUsers[index];
+            if (IsMe(user)) return;
+
+            cmbRecipient.SelectedItem = user;
+            txtMessage.Focus();
+        }
+
+        private void CmbRecipient_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string recipient = cmbRecipient.SelectedItem as string;
+            bool isPrivate = recipient != null && recipient != Everyone;
+            txtMessage.PlaceholderText = isPrivate
+                ? recipient + " kullanıcısına özel mesaj yazın"
+                : "Mesajınızı yazın ve Enter'a basın";
+            txtMessage.BackColor = isPrivate ? Color.FromArgb(245, 243, 255) : SystemColors.Window;
+        }
+
+        /// <summary>Alıcı listesini çevrimiçi kullanıcılara göre yeniler; seçili alıcı ayrıldıysa "Herkes"e döner.</summary>
+        private void UpdateRecipients(IReadOnlyList<string> users)
+        {
+            string selected = cmbRecipient.SelectedItem as string ?? Everyone;
+
+            cmbRecipient.BeginUpdate();
+            cmbRecipient.Items.Clear();
+            cmbRecipient.Items.Add(Everyone);
+            foreach (string user in users)
+            {
+                if (!IsMe(user))
+                    cmbRecipient.Items.Add(user);
+            }
+            cmbRecipient.EndUpdate();
+
+            if (cmbRecipient.Items.Contains(selected))
+            {
+                cmbRecipient.SelectedItem = selected;
+            }
+            else
+            {
+                cmbRecipient.SelectedIndex = 0;
+                if (selected != Everyone && client.IsConnected)
+                    AppendLine(DateTime.Now, "* " + selected + " ayrıldığı için alıcı \"Herkes\" olarak değiştirildi.", SystemColor, italicFont);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        //  Geçmişi kaydetme
+        // ---------------------------------------------------------------
+
+        private void BtnSaveHistory_Click(object sender, EventArgs e)
+        {
+            if (history.Count == 0)
+            {
+                MessageBox.Show(this, "Kaydedilecek mesaj yok.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Title = "Sohbet geçmişini kaydet";
+                dialog.Filter = "Metin dosyası (*.txt)|*.txt";
+                dialog.FileName = "ChatHistory_" + (client.Username ?? "sohbet") + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".txt";
+                dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                try
+                {
+                    history.SaveToFile(dialog.FileName, client.Username, client.ServerAddress);
+                    tsslState.Text = history.Count + " satır kaydedildi: " + Path.GetFileName(dialog.FileName);
+                    MessageBox.Show(this, history.Count + " satırlık sohbet geçmişi kaydedildi.\n\n" + dialog.FileName,
+                        "Kaydedildi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    MessageBox.Show(this, "Dosya kaydedilemedi: " + ex.Message, "Hata",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         // ---------------------------------------------------------------
@@ -171,6 +279,9 @@ namespace ChatApp.Client
         {
             RunOnUi(() =>
             {
+                currentUsers = e.Users;
+                UpdateRecipients(e.Users);
+
                 lstUsers.BeginUpdate();
                 lstUsers.Items.Clear();
                 foreach (string user in e.Users)
@@ -220,6 +331,20 @@ namespace ChatApp.Client
                     AppendTime(message.Timestamp);
                     AppendText(name + ": ", mine ? OwnNameColor : ColorForName(message.From), boldFont);
                     AppendText(message.Text + Environment.NewLine, TextColor, rtbChat.Font);
+                    history.Add(message.Timestamp, message.From + ": " + message.Text);
+                    break;
+                }
+
+                case MessageType.Private:
+                {
+                    bool sentByMe = IsMe(message.From);
+                    string header = sentByMe
+                        ? "[Özel] Ben → " + message.To + ": "
+                        : "[Özel] " + message.From + " → Ben: ";
+                    AppendTime(message.Timestamp);
+                    AppendText(header, PrivateColor, boldFont);
+                    AppendText(message.Text + Environment.NewLine, PrivateColor, rtbChat.Font);
+                    history.Add(message.Timestamp, "[Özel] " + message.From + " → " + message.To + ": " + message.Text);
                     break;
                 }
 
@@ -236,6 +361,7 @@ namespace ChatApp.Client
             AppendTime(time);
             AppendText(text + Environment.NewLine, color, font);
             rtbChat.ScrollToCaret();
+            history.Add(time, text);
         }
 
         private void AppendTime(DateTime time)
@@ -304,6 +430,7 @@ namespace ChatApp.Client
             btnDisconnect.Enabled = connected;
             txtMessage.Enabled = connected;
             btnSend.Enabled = connected;
+            cmbRecipient.Enabled = connected;
         }
 
         private void UpdateCharCount()
