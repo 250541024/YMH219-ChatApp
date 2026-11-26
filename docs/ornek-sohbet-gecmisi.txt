@@ -1,0 +1,13 @@
+﻿# Chat Uygulaması - Sohbet Geçmişi
+# Kullanıcı   : mehmet
+# Sunucu      : 127.0.0.1:5050
+# Kaydedilme  : 26.11.2026 16:25:39
+# Satır sayısı: 7
+----------------------------------------------------------------------
+[26.11.2026 16:23:56] * Sohbete hoş geldin, mehmet!
+[26.11.2026 16:24:13] mehmet: Herkese merhaba! Proje toplantısı saat kaçta?
+[26.11.2026 16:24:16] ayse: Saat 15:00'te, kütüphanede.
+[26.11.2026 16:24:19] zeynep: Ben de geleceğim.
+[26.11.2026 16:24:29] [Özel] zeynep → mehmet: Mehmet, toplantıya notlarını getirir misin?
+[26.11.2026 16:24:38] [Özel] mehmet → zeynep: Tabii, getiririm. Slaytları da hazırladım.
+[26.11.2026 16:24:58] * Sunucu duyurusu: Sunucu 17:00'de bakım için kapatılacak.
