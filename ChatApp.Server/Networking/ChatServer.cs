@@ -164,11 +164,11 @@ namespace ChatApp.Server.Networking
             }
             catch (OperationCanceledException)
             {
-                reason = "sunucu durduruldu";
+                reason = "sunucu durdurulduğu için ayrıldı";
             }
             catch (ProtocolException ex)
             {
-                reason = "protokol hatası (" + ex.Message + ")";
+                reason = "protokol hatası nedeniyle çıkarıldı (" + ex.Message + ")";
             }
             catch (Exception ex) when (ex is IOException || ex is SocketException || ex is ObjectDisposedException)
             {
