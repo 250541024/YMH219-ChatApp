@@ -233,8 +233,8 @@ namespace ChatApp.Server
                 : "■  SUNUCU KAPALI";
             lblStatusIndicator.BackColor = running ? RunningColor : StoppedColor;
 
-            btnStart.Enabled = !running;
-            btnStop.Enabled = running;
+            SetButtonState(btnStart, !running, RunningColor);
+            SetButtonState(btnStop, running, Color.FromArgb(220, 38, 38));
             cmbAddress.Enabled = !running;
             nudPort.Enabled = !running;
             txtAnnouncement.Enabled = running;
@@ -244,6 +244,13 @@ namespace ChatApp.Server
             Text = running ? "Chat Sunucusu - " + server.LocalEndPoint : "Chat Sunucusu";
             tsslState.Text = running ? "Sunucu çalışıyor: " + server.LocalEndPoint : "Sunucu kapalı";
             UpdateClientCount();
+        }
+
+        /// <summary>Renkli düğme devre dışıyken gri gösterilir; böylece tıklanabilir olan hemen anlaşılır.</summary>
+        private static void SetButtonState(Button button, bool enabled, Color activeColor)
+        {
+            button.Enabled = enabled;
+            button.BackColor = enabled ? activeColor : Color.FromArgb(203, 213, 225);
         }
 
         private void UpdateClientCount()

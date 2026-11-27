@@ -426,11 +426,18 @@ namespace ChatApp.Client
             txtHost.Enabled = disconnected;
             nudPort.Enabled = disconnected;
             txtUsername.Enabled = disconnected;
-            btnConnect.Enabled = disconnected;
-            btnDisconnect.Enabled = connected;
+            SetButtonState(btnConnect, disconnected, ConnectedColor);
+            SetButtonState(btnDisconnect, connected, ErrorColor);
             txtMessage.Enabled = connected;
             btnSend.Enabled = connected;
             cmbRecipient.Enabled = connected;
+        }
+
+        /// <summary>Renkli düğme devre dışıyken gri gösterilir; böylece tıklanabilir olan hemen anlaşılır.</summary>
+        private static void SetButtonState(Button button, bool enabled, Color activeColor)
+        {
+            button.Enabled = enabled;
+            button.BackColor = enabled ? activeColor : Color.FromArgb(203, 213, 225);
         }
 
         private void UpdateCharCount()
