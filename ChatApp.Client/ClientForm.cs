@@ -59,6 +59,7 @@ namespace ChatApp.Client
             nudPort.Value = ChatRules.DefaultPort;
             txtUsername.MaxLength = ChatRules.MaxUsernameLength;
             txtMessage.MaxLength = ChatRules.MaxMessageLength;
+            ApplySavedSettings();
 
             client.MessageReceived += Client_MessageReceived;
             client.UserListChanged += Client_UserListChanged;
@@ -91,6 +92,8 @@ namespace ChatApp.Client
             try
             {
                 await client.ConnectAsync(txtHost.Text, (int)nudPort.Value, txtUsername.Text);
+                // Yalnızca başarılı bağlantı hatırlanır; hatalı adres bir sonraki açılışa taşınmaz
+                new ClientSettings { Host = txtHost.Text.Trim(), Port = (int)nudPort.Value, Username = client.Username }.Save();
                 txtMessage.Focus();
             }
             catch (ArgumentException ex)
@@ -105,6 +108,20 @@ namespace ChatApp.Client
                 txtUsername.Focus();
                 txtUsername.SelectAll(); // Ad reddedildiyse kullanıcı hemen yenisini yazabilsin
             }
+        }
+
+        /// <summary>En son başarılı bağlantının sunucu, port ve kullanıcı adını alanlara yazar.</summary>
+        private void ApplySavedSettings()
+        {
+            ClientSettings saved = ClientSettings.Load();
+            if (saved == null) return;
+
+            if (!string.IsNullOrWhiteSpace(saved.Host))
+                txtHost.Text = saved.Host;
+            if (saved.Port >= nudPort.Minimum && saved.Port <= nudPort.Maximum)
+                nudPort.Value = saved.Port;
+            if (!string.IsNullOrWhiteSpace(saved.Username))
+                txtUsername.Text = saved.Username;
         }
 
         private async void BtnDisconnect_Click(object sender, EventArgs e)

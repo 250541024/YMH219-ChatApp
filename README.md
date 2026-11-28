@@ -104,6 +104,7 @@ dotnet run --project ChatApp.Client
 - Bağlantı durumu göstergesi: gri (bağlı değil), turuncu (bağlanıyor), yeşil (bağlı)
 - Pencere kapatılırken düzgün ayrılma: istemci sunucuya `Leave` gönderir, sunucu kapanırken istemcilere bildirim yollar
 - Her kullanıcı adı sohbet ekranında hep aynı renkte gösterilir
+- İstemci en son **başarıyla** bağlandığı sunucu adresini, portu ve kullanıcı adını hatırlar (`ClientSettings`, `%LOCALAPPDATA%\YMH219-ChatApp\istemci-ayarlari.json`). Hatalı bir adres kaydedilmez. Ayar dosyası bozuksa varsayılan değerlerle açılır.
 
 ## Mimari
 
@@ -155,7 +156,8 @@ YMH219-ChatApp/
 │   │   ├── ChatConnectionException.cs Anlaşılır ağ hatası
 │   │   └── ClientEventArgs.cs         Olay argümanları
 │   └── Services/
-│       └── ChatHistory.cs             Sohbet geçmişi ve .txt kaydı
+│       ├── ChatHistory.cs             Sohbet geçmişi ve .txt kaydı
+│       └── ClientSettings.cs          Son bağlantı bilgilerini hatırlama
 └── docs/                              Ekran görüntüleri ve örnek geçmiş dosyası
 ```
 
